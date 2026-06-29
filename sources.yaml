@@ -1,0 +1,95 @@
+# AI Daily Brief — source list + config. Edit freely; /ai-brief reads this on every run.
+# YouTube podcasts get clickable minute-accurate links. audio_only -> [H:MM:SS] labels.
+
+delivery:
+  email_to:
+    - you@example.com    # personal
+    - you@work.example.com        # work
+  telegram: true                 # push the one-pager to phone
+  wiki_note: true                # also archive to Learning/wiki/briefs/YYYY-MM-DD.md
+
+config:
+  lookback_hours: 36             # discover items newer than this
+  max_items: 8                   # true one-pager: 5-8 ranked items
+  max_whisper_per_run: 3         # audio-only transcription cap (Whisper ~6min/audio-hr on CPU)
+  min_match_score: 0.55          # below this, link to the episode start (no false timestamp)
+
+# Podcasts. `youtube:` = channel/handle to discover from (verify on first run, update if 404).
+# Top 10 for SV AI builders. ai_only -> only surface AI/ML episodes from a general feed.
+podcasts:
+  - name: Latent Space
+    youtube: https://www.youtube.com/@LatentSpacePod/videos   # the definitive "AI Engineer" pod
+  - name: Dwarkesh Podcast
+    youtube: https://www.youtube.com/@DwarkeshPatel/videos     # long-form frontier researchers/CEOs
+  - name: No Priors
+    youtube: https://www.youtube.com/@NoPriorsPod/videos       # Sarah Guo & Elad Gil, VC lens
+  - name: The Cognitive Revolution
+    youtube: https://www.youtube.com/@CognitiveRevolutionPodcast/videos  # Nathan Labenz, new models/tools
+  - name: a16z Podcast
+    youtube: https://www.youtube.com/@a16z/videos              # infra, agents, market structure
+  - name: Lenny's Podcast
+    youtube: https://www.youtube.com/@LennysPodcast/videos     # AI-PM / product-building episodes
+    ai_only: true
+  - name: Lex Fridman
+    youtube: https://www.youtube.com/@lexfridman/videos        # marquee lab-leader sit-downs
+    ai_only: true
+  - name: Training Data
+    youtube: https://www.youtube.com/@sequoiacapital/videos    # Sequoia; researcher/founder interviews
+    ai_only: true                # Sequoia channel is mixed -> filter to AI/Training Data eps
+  - name: AI Engineer
+    youtube: https://www.youtube.com/@aiDotEngineer/videos     # practitioner conference talks ("how we built it")
+  - name: Hard Fork (NYT)
+    audio_only: true             # no reliable YouTube full eps -> timestamp labels only
+    url: https://www.nytimes.com/column/hard-fork              # Kevin Roose & Casey Newton
+
+# Newsletters. Pulled from Gmail label first (if subscribed), else fetched from url.
+# Top 10 high-signal AI/tech newsletters SV professionals actually read (researched 2026-06-29).
+# `sender` = sending address/domain, used for the Gmail allowlist filter (see README).
+newsletters:
+  - name: Stratechery
+    author: Ben Thompson
+    url: https://stratechery.com
+    sender: stratechery.com          # paid ($15/mo); tech strategy, ~4x/wk
+    paid: true
+  - name: Interconnects
+    author: Nathan Lambert
+    url: https://www.interconnects.ai
+    sender: interconnects.ai          # frontier-lab post-training research
+  - name: Latent Space
+    author: swyx & Alessio Fanelli
+    url: https://www.latent.space/
+    sender: latent.space              # the "AI Engineer" newsletter
+  - name: One Useful Thing
+    author: Ethan Mollick
+    url: https://www.oneusefulthing.org
+    sender: oneusefulthing.org        # AI applied to real work
+  - name: Import AI
+    author: Jack Clark
+    url: https://importai.substack.com
+    sender: jack-clark.net            # research + policy
+  - name: The Batch
+    author: Andrew Ng / DeepLearning.AI
+    url: https://www.deeplearning.ai/the-batch/
+    sender: thebatch@deeplearning.ai  # confirmed in inbox
+    # NOTE: no public RSS found -> contributes nothing to the brief (email-only). Wire `rss:` if one appears.
+  - name: Ahead of AI
+    author: Sebastian Raschka
+    url: https://magazine.sebastianraschka.com
+    sender: magazine.sebastianraschka.com   # deep technical ML
+  - name: SemiAnalysis
+    author: Dylan Patel
+    url: https://www.semianalysis.com
+    rss: https://www.semianalysis.com/rss/   # Ghost feed needs trailing slash
+    sender: semianalysis.com          # AI hardware / datacenters
+    # NOTE: public RSS exposes mostly old free-tier posts (paywalled) -> rarely fresh enough for a daily brief.
+  - name: The Pragmatic Engineer
+    author: Gergely Orosz
+    url: https://newsletter.pragmaticengineer.com
+    sender: pragmaticengineer.com     # eng practice / career; #1 paid tech Substack
+  - name: AINews (Smol AI)
+    author: swyx et al.
+    url: https://news.smol.ai
+    rss: https://news.smol.ai/rss.xml
+    sender: smol.ai                   # daily AI digest, Karpathy-endorsed
+
+gmail_label: AI Newsletters       # real label name (was "AI-Newsletters" — fixed 2026-06-29)
