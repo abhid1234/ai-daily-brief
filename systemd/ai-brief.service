@@ -3,5 +3,5 @@ Description=AI Daily Brief — build & deliver the daily AI one-pager
 
 [Service]
 Type=oneshot
-ExecStart=%h/Core/Workspace/ClaudeCode/Learning/brief/run-brief.sh
+ExecStart=%h/Core/Workspace/ClaudeCode/ai-daily-brief/run-brief.sh
 TimeoutStartSec=1800

@@ -11,6 +11,7 @@ newsletters via RSS/web, dedups against state. Writes:
 Exit 0 with materials (even if empty -> "quiet day"). Run with system python3 (needs pyyaml).
 """
 import json
+import os
 import re
 import subprocess
 import sys
@@ -21,14 +22,18 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path("/home/abhidaas/Core/Workspace/ClaudeCode/Learning")
-BRIEF = ROOT / "brief"
-OUT = Path("/tmp/brief")
+# Repo-relative paths — derived from this file's location, so the tool runs from anywhere.
+BRIEF = Path(__file__).resolve().parent
+OUT = Path(os.environ.get("BRIEF_TMP", "/tmp/brief"))
 SEG_DIR = OUT / "segments"
-VENV_PY = "/home/abhidaas/Core/Workspace/ClaudeCode/Work/gmail-mcp-env/bin/python"
-WHISPER_PY = str(ROOT / ".whisper-venv/bin/python")
+# Machine-specific helper interpreters (transcripts/audio are best-effort: missing -> skipped).
+# Override per host via env; defaults target the author's machine for backward compatibility.
+VENV_PY = os.environ.get(
+    "BRIEF_VENV_PY", str(Path.home() / "Core/Workspace/ClaudeCode/Work/gmail-mcp-env/bin/python"))
+WHISPER_PY = os.environ.get(
+    "BRIEF_WHISPER_PY", str(Path.home() / "Core/Workspace/ClaudeCode/Learning/.whisper-venv/bin/python"))
 YT_TRANSCRIPT = str(BRIEF / "yt_transcript.py")
-TRANSCRIBE = str(ROOT / "scripts/transcribe-audio.py")
+TRANSCRIBE = str(BRIEF / "scripts/transcribe-audio.py")  # bundled in-repo
 UA = "Mozilla/5.0 (AI-Daily-Brief; +personal)"
 
 

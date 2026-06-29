@@ -12,16 +12,16 @@
 set -uo pipefail
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
 
-ROOT="$HOME/Core/Workspace/ClaudeCode/Learning"
-BRIEF="$ROOT/brief"
-TMP="/tmp/brief"
+# Self-locate: BRIEF is the dir this script lives in, so the pipeline runs from anywhere.
+BRIEF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TMP="${BRIEF_TMP:-/tmp/brief}"
 TODAY="$(date +%Y-%m-%d)"
 LOG_DIR="$BRIEF/logs"; mkdir -p "$LOG_DIR" "$TMP"
 LOG="$LOG_DIR/$TODAY.log"
 
 main() {
   echo "=== ai-brief $TODAY start $(date -Is) ==="
-  cd "$ROOT" || exit 1
+  cd "$BRIEF" || exit 1
 
   # Stage 0 — idempotency
   if [ "$(python3 -c "import json;print(json.load(open('$BRIEF/state.json')).get('lastRun'))")" = "$TODAY" ] \
@@ -53,7 +53,7 @@ main() {
 
   # Stage 4 — delivery (send-only tools, NO Bash)
   echo "--- stage 4: deliver ---"
-  claude -p "$(cat "$BRIEF/prompts/deliver.md")" \
+  claude -p "$(sed "s#<BRIEF_DIR>#$BRIEF#g" "$BRIEF/prompts/deliver.md")" \
     --permission-mode default \
     --allowedTools "Read,mcp__google-workspace__gmail_send,mcp__plugin_telegram_telegram__reply" \
     >>"$LOG" 2>&1 || echo "deliver reported non-zero (check log)"

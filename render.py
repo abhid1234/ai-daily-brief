@@ -8,6 +8,7 @@ it to the wiki, updates state.json, and commits. Outputs for Stage 4 (delivery):
 Run with system python3 (imports link.py from this dir).
 """
 import json
+import os
 import re
 import subprocess
 import sys
@@ -18,14 +19,14 @@ from urllib.parse import urlparse
 
 import yaml
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import link  # noqa: E402  (local, stdlib-only)
 
-ROOT = Path("/home/abhidaas/Core/Workspace/ClaudeCode/Learning")
-BRIEF = ROOT / "brief"
-OUT = Path("/tmp/brief")
+# Repo-relative paths — derived from this file's location, so the tool runs from anywhere.
+BRIEF = Path(__file__).resolve().parent
+OUT = Path(os.environ.get("BRIEF_TMP", "/tmp/brief"))
 SEG_DIR = OUT / "segments"
-WIKI_BRIEFS = ROOT / "wiki/briefs"
+ARCHIVE = BRIEF / "briefs"  # local in-repo archive of each day's brief (was Learning/wiki/briefs)
 
 
 def resolve_link(item: dict, min_score: float) -> tuple[str, str]:
@@ -342,13 +343,11 @@ def main() -> None:
     (OUT / "brief.html").write_text(html)
     (OUT / "subject.txt").write_text(f"🧠 AI Daily Brief — {today}")
 
-    # archive to wiki
-    WIKI_BRIEFS.mkdir(parents=True, exist_ok=True)
-    (WIKI_BRIEFS / f"{today}.md").write_text(md)
-    log = ROOT / "wiki/log.md"
-    if log.exists():
-        with log.open("a") as f:
-            f.write(f"\n- {today} BRIEF -> wiki/briefs/{today}.md ({len(draft.get('items', []))} items)")
+    # archive locally (in-repo)
+    ARCHIVE.mkdir(parents=True, exist_ok=True)
+    (ARCHIVE / f"{today}.md").write_text(md)
+    with (ARCHIVE / "log.md").open("a") as f:
+        f.write(f"\n- {today} BRIEF -> briefs/{today}.md ({len(draft.get('items', []))} items)")
 
     # update state (dedup + lastRun)
     state = json.loads((BRIEF / "state.json").read_text())
@@ -357,11 +356,11 @@ def main() -> None:
     state["lastRun"] = today
     (BRIEF / "state.json").write_text(json.dumps(state, indent=2) + "\n")
 
-    # commit (no push)
-    subprocess.run(["git", "add", "-A"], cwd=ROOT, capture_output=True)
+    # commit the archive + state to this repo (no push)
+    subprocess.run(["git", "add", "-A"], cwd=BRIEF, capture_output=True)
     subprocess.run(["git", "commit", "-m", f"brief: {today} ({len(ids)} items)"],
-                   cwd=ROOT, capture_output=True)
-    print(str(WIKI_BRIEFS / f"{today}.md"))
+                   cwd=BRIEF, capture_output=True)
+    print(str(ARCHIVE / f"{today}.md"))
 
 
 if __name__ == "__main__":

@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Install the AI Daily Brief systemd user timer (runs 07:30 daily, laptop-closed-safe via linger).
-# Idempotent. Run: bash ~/Core/Workspace/ClaudeCode/Learning/brief/systemd/install.sh
+# Idempotent. Run: bash <repo>/systemd/install.sh   (self-locating — works from any clone path).
+#
+# NOTE: ai-brief.service uses ExecStart=%h/Core/Workspace/ClaudeCode/ai-daily-brief/run-brief.sh.
+# If you clone this repo elsewhere, update that ExecStart path to match before installing.
 set -euo pipefail
 
-SRC="$HOME/Core/Workspace/ClaudeCode/Learning/brief/systemd"
+SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # this systemd/ dir
 DEST="$HOME/.config/systemd/user"
 mkdir -p "$DEST"
-chmod +x "$HOME/Core/Workspace/ClaudeCode/Learning/brief/run-brief.sh"
+chmod +x "$SRC/../run-brief.sh"
 cp "$SRC/ai-brief.service" "$SRC/ai-brief.timer" "$DEST/"
 
 systemctl --user daemon-reload
