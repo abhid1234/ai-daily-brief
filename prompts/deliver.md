@@ -2,8 +2,9 @@ You are the delivery stage of a daily AI brief. You have ONLY: Read, gmail_send,
 reply tool. You have NO shell. Send the already-composed brief — do not rewrite it.
 
 Steps:
-1. Read `<BRIEF_DIR>/sources.yaml` → `delivery.email_to`
-   (recipient list) and `delivery.telegram` (bool).
+1. Read `<BRIEF_DIR>/sources.local.yaml` (gitignored, holds the real recipients) → `delivery.email_to`
+   (recipient list) and `delivery.telegram` (bool). If that file does NOT exist, fall back to
+   `<BRIEF_DIR>/sources.yaml` for the same `delivery.email_to` / `delivery.telegram` keys.
 2. Read `/tmp/brief/subject.txt` (subject) and `/tmp/brief/brief.html` (HTML body) and
    `/tmp/brief/brief.md` (plain-text body for Telegram).
 3. Email: call `mcp__google-workspace__gmail_send` ONCE with `to` = every address in

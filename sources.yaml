@@ -2,11 +2,13 @@
 # YouTube podcasts get clickable minute-accurate links. audio_only -> [H:MM:SS] labels.
 
 delivery:
+  # Real recipients live in sources.local.yaml (gitignored) so this repo carries no PII.
+  # The delivery stage reads sources.local.yaml first and falls back to these placeholders.
   email_to:
-    - you@example.com    # personal
-    - you@work.example.com        # work
+    - you@example.com            # personal — override in sources.local.yaml
+    - you@work.example.com       # work — override in sources.local.yaml
   telegram: true                 # push the one-pager to phone
-  wiki_note: true                # also archive to Learning/wiki/briefs/YYYY-MM-DD.md
+  wiki_note: true                # also archive a copy to briefs/YYYY-MM-DD.md
 
 config:
   lookback_hours: 36             # discover items newer than this

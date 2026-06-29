@@ -1,2 +1,6 @@
 .telegram_chat_id
 logs/
+__pycache__/
+*.pyc
+# local-only delivery config (real recipients live here, never committed)
+sources.local.yaml
