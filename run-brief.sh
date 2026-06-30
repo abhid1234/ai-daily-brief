@@ -51,6 +51,13 @@ main() {
   echo "--- stage 3: render ---"
   if ! python3 "$BRIEF/render.py" "$TMP/draft.json"; then echo "render failed"; return 1; fi
 
+  # Stage 3.5 — audio (deterministic, best-effort, opt-in via delivery.audio)
+  AUDIO="$(python3 -c "import yaml;print(yaml.safe_load(open('$BRIEF/sources.yaml')).get('delivery',{}).get('audio',False))" 2>/dev/null)"
+  if [ "$AUDIO" = "True" ]; then
+    echo "--- stage 3.5: tts ---"
+    python3 "$BRIEF/tts.py" || echo "tts reported non-zero (audio skipped)"
+  fi
+
   # Stage 4 — delivery (send-only tools, NO Bash)
   echo "--- stage 4: deliver ---"
   claude -p "$(sed "s#<BRIEF_DIR>#$BRIEF#g" "$BRIEF/prompts/deliver.md")" \

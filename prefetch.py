@@ -257,10 +257,30 @@ def main() -> None:
                 "seg_file": None, "text": item["text"],
             })
 
+    # cross-day theme context for the reasoning stage (so it can continue ongoing stories).
+    # Pass slug+label+how-long-running for themes seen in the last 14 days, freshest first.
+    today = datetime.now(timezone.utc).date()
+    recent_themes = []
+    for th in state.get("themes", []):
+        dates = sorted(th.get("dates", []))
+        if not dates:
+            continue
+        try:
+            last = datetime.strptime(dates[-1], "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if (today - last).days <= 14:
+            recent_themes.append({
+                "slug": th.get("slug", ""), "label": th.get("label", ""),
+                "days_active": len(set(dates)), "last_seen": dates[-1],
+            })
+    recent_themes.sort(key=lambda t: t["last_seen"], reverse=True)
+
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "materials.json").write_text(json.dumps({
         "generated": datetime.now(timezone.utc).isoformat(),
         "count": len(materials), "items": materials,
+        "recent_themes": recent_themes[:12],
     }, ensure_ascii=False))
     print(f"prefetch: {len(materials)} items "
           f"({sum(1 for m in materials if m['type']=='youtube')} yt, "

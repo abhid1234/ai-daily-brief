@@ -206,6 +206,19 @@ def render(draft: dict, min_score: float, stats: dict | None = None) -> tuple[st
         md += [take, ""]
     if qod.get("text"):
         md += [f"> {qod['text']}", f"> — {qod.get('attribution', '')}".rstrip(" —"), ""]
+    dev_md = []
+    for dv in (draft.get("developing") or []):
+        if not (dv.get("label") or "").strip():
+            continue
+        days = dv.get("days_running") or 0
+        tag = f"Day {days}" if (dv.get("status") == "continuing" and days > 1) else "New"
+        dev_md.append(f"{tag} — {dv['label']}")
+    if dev_md:
+        md += ["**📈 Developing:** " + " · ".join(dev_md), ""]
+    nums_md = [f"**{x['figure']}** {x.get('label', '')}".strip()
+               for x in (draft.get("by_the_numbers") or []) if (x.get("figure") or "").strip()]
+    if nums_md:
+        md += ["## By the Numbers", "", *(f"- {x}" for x in nums_md), ""]
     n = 0
     for sec in ordered:
         md += [f"## {sec}", ""]
@@ -230,8 +243,19 @@ def render(draft: dict, min_score: float, stats: dict | None = None) -> tuple[st
             tail = f" [{('Listen' if q.get('type') in ('youtube', 'audio') else 'Read')} →]({href})" if safe else ""
             md += [f"- {lead}{q.get('text', '')}{tail}"]
         md += [""]
+    _debate = draft.get("debate") or {}
+    if isinstance(_debate, dict) and (_debate.get("question") or "").strip():
+        md += ["## The Debate", "", _debate["question"], ""]
+        for side in (_debate.get("side_a") or {}, _debate.get("side_b") or {}):
+            if (side.get("who") or side.get("view")):
+                md += [f"- **{side.get('who', '')}:** {side.get('view', '')}"]
+        md += [""]
     if watch:
         md += ["## What to Watch", "", watch, ""]
+    if draft.get("glossary"):
+        md += ["## Glossary", "",
+               *(f"- **{g['term']}** — {g.get('definition', '')}"
+                 for g in draft["glossary"] if (g.get("term") or "").strip()), ""]
     if footer:
         md += ["---", f"_{footer}_"]
 
@@ -297,6 +321,65 @@ def render(draft: dict, min_score: float, stats: dict | None = None) -> tuple[st
                       f'<div style="color:{OX};letter-spacing:.14em;text-transform:uppercase;font-size:12px;'
                       'font-weight:700;margin-bottom:6px">What to Watch</div>' + rich(watch) + '</div>')
 
+    # Developing Story — compact theme strip. Day-count comes from main() (deterministic), not LLM.
+    dev_html = ""
+    dev_chips = []
+    for dv in (draft.get("developing") or []):
+        label = escape((dv.get("label") or "").strip())
+        if not label:
+            continue
+        days = dv.get("days_running") or 0
+        tag = f"Day {days}" if (dv.get("status") == "continuing" and days > 1) else "New"
+        dev_chips.append(f'<b style="color:{OX}">{tag}</b> — {label}')
+    if dev_chips:
+        dev_html = ('<div style="font-size:13.5px;line-height:1.7;color:#6b645a;padding:12px 0 0">'
+                    '\U0001F4C8 <b style="color:#5e574c;letter-spacing:.04em;text-transform:uppercase;'
+                    'font-size:12px">Developing</b> &nbsp; ' + ' &nbsp;·&nbsp; '.join(dev_chips) + '</div>')
+
+    # By the Numbers — the day's hard figures (LLM extracts verbatim; display-only)
+    num_html = ""
+    num_cells = []
+    for x in (draft.get("by_the_numbers") or []):
+        fig = escape((x.get("figure") or "").strip())
+        if not fig:
+            continue
+        num_cells.append('<span style="display:inline-block;margin:0 20px 10px 0;vertical-align:top">'
+                         f'<b style="font-size:20px;color:{OX}">{fig}</b><br>'
+                         f'<span style="font-size:12px;color:#8a8275">{escape((x.get("label") or "").strip())}</span></span>')
+    if num_cells:
+        num_html = section_header("By the Numbers", None) + '<div style="padding:4px 0 0">' + "".join(num_cells) + '</div>'
+
+    # The Debate — the day's live disagreement (callout box; only when present)
+    debate = draft.get("debate") or {}
+    debate_html = ""
+    if isinstance(debate, dict) and (debate.get("question") or "").strip():
+        rows = ""
+        for side in (debate.get("side_a") or {}, debate.get("side_b") or {}):
+            who = escape((side.get("who") or "").strip())
+            view = rich(side.get("view") or "")
+            if who or view:
+                rows += (f'<div style="margin:7px 0 0"><b style="color:#23201c">{who}:</b> '
+                         f'<span style="color:#4a4334">{view}</span></div>')
+        debate_html = ('<div style="background:#f2ecdf;border:1px solid #e6ddc9;border-radius:6px;'
+                       'padding:14px 18px;margin:24px 0 0;font-size:14.5px;line-height:1.6;color:#4a4334">'
+                       f'<div style="color:{OX};letter-spacing:.14em;text-transform:uppercase;font-size:12px;'
+                       'font-weight:700;margin-bottom:6px">The Debate</div>'
+                       f'<div style="font-style:italic;color:#3a352e">{rich(debate.get("question", ""))}</div>'
+                       + rows + '</div>')
+
+    # Glossary — jargon for a non-engineer (aside before the footer)
+    gloss_html = ""
+    gloss_rows = []
+    for g in (draft.get("glossary") or []):
+        term = escape((g.get("term") or "").strip())
+        deff = rich(g.get("definition") or "")
+        if term and deff:
+            gloss_rows.append(f'<div style="margin:5px 0 0"><b style="color:#5e574c">{term}</b> '
+                              f'<span style="color:#8a8275">— {deff}</span></div>')
+    if gloss_rows:
+        gloss_html = (section_header("Glossary", None)
+                      + '<div style="font-size:13px;line-height:1.5">' + "".join(gloss_rows) + '</div>')
+
     foot_html = (
         '<hr style="border:0;border-top:1px solid #e2dacb;margin:24px 0 0">'
         '<div style="font-size:12.5px;line-height:1.55;color:#9b9384;font-style:italic;padding:16px 0 0">'
@@ -306,16 +389,53 @@ def render(draft: dict, min_score: float, stats: dict | None = None) -> tuple[st
         '<div style="background:#ece6da;padding:24px 0;margin:0">'
         '<div style="max-width:660px;margin:0 auto;background:#faf7f1;padding:34px 46px 38px;'
         "font-family:Georgia,'Times New Roman',serif;color:#23201c\">"
-        + head + stats_html + take_html + qod_html + "".join(secs)
-        + qh_html + watch_html + foot_html + '</div></div>'
+        + head + stats_html + dev_html + take_html + qod_html + num_html + "".join(secs)
+        + qh_html + debate_html + watch_html + gloss_html + foot_html + '</div></div>'
     )
     return "\n".join(md), html
+
+
+def process_themes(draft: dict, state: dict, today: str) -> None:
+    """Match today's `developing` themes to persisted state by slug, stamp today's date, and compute
+    each theme's day-count FROM STATE (deterministic — the LLM never supplies the number). Mutates
+    draft['developing'] (adds 'days_running') and state['themes'] (appends today + prunes >14 days)."""
+    by_slug = {t.get("slug"): t for t in state.get("themes", []) if t.get("slug")}
+    for dv in (draft.get("developing") or []):
+        slug = (dv.get("slug") or "").strip()
+        if not slug:
+            continue
+        th = by_slug.setdefault(slug, {"slug": slug, "label": dv.get("label", ""), "dates": []})
+        if today not in th["dates"]:
+            th["dates"].append(today)
+        if (dv.get("label") or "").strip():
+            th["label"] = dv["label"]  # keep the freshest label
+        dv["days_running"] = len(set(th["dates"]))
+    # prune themes not seen in the last 14 days
+    cutoff = datetime.strptime(today, "%Y-%m-%d").date()
+    kept = []
+    for th in by_slug.values():
+        dates = sorted(set(th.get("dates", [])))
+        if not dates:
+            continue
+        try:
+            last = datetime.strptime(dates[-1], "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if (cutoff - last).days <= 14:
+            th["dates"] = dates
+            kept.append(th)
+    state["themes"] = sorted(kept, key=lambda t: t["dates"][-1], reverse=True)
 
 
 def main() -> None:
     draft = json.loads(Path(sys.argv[1] if len(sys.argv) > 1 else OUT / "draft.json").read_text())
     sources = yaml.safe_load((BRIEF / "sources.yaml").read_text())
     min_score = float(sources.get("config", {}).get("min_match_score", 0.55))
+    today = str(date.today())
+
+    # cross-day theme tracking — process BEFORE render so day-counts reach the layout.
+    state = json.loads((BRIEF / "state.json").read_text())
+    process_themes(draft, state, today)
 
     # deterministic stats (never LLM-supplied numbers): source counts from config, items + reading
     # time from the prefetch materials the reasoning stage actually saw.
@@ -337,11 +457,12 @@ def main() -> None:
     }
 
     md, html = render(draft, min_score, stats)
-    today = str(date.today())
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "brief.md").write_text(md)
     (OUT / "brief.html").write_text(html)
     (OUT / "subject.txt").write_text(f"🧠 AI Daily Brief — {today}")
+    # spoken script for the optional TTS stage (Stage 3.5). Empty file if none produced.
+    (OUT / "audio_script.txt").write_text((draft.get("audio_script") or "").strip())
 
     # archive locally (in-repo)
     ARCHIVE.mkdir(parents=True, exist_ok=True)
@@ -349,8 +470,7 @@ def main() -> None:
     with (ARCHIVE / "log.md").open("a") as f:
         f.write(f"\n- {today} BRIEF -> briefs/{today}.md ({len(draft.get('items', []))} items)")
 
-    # update state (dedup + lastRun)
-    state = json.loads((BRIEF / "state.json").read_text())
+    # update state (dedup + lastRun + themes from process_themes)
     ids = {it["id"] for it in draft.get("items", [])}
     state["briefed"] = sorted(set(state.get("briefed", [])) | ids)[-2000:]
     state["lastRun"] = today

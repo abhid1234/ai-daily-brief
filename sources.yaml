@@ -8,6 +8,7 @@ delivery:
     - you@example.com            # personal — override in sources.local.yaml
     - you@work.example.com       # work — override in sources.local.yaml
   telegram: true                 # push the one-pager to phone
+  audio: true                    # also synthesize an mp3 (Google TTS) + attach to Telegram/email
   wiki_note: true                # also archive a copy to briefs/YYYY-MM-DD.md
 
 config:
